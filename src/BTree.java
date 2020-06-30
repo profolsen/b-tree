@@ -46,7 +46,7 @@ public class BTree {
             root = n.condense();
         } else {
             int scapegoat = n.children.get(x).highKey();
-            System.out.println(scapegoat);
+            //System.out.println(scapegoat);
             delete(scapegoat);  //technically recursion, but limited to one call.
             BNode valueDestinationNode = search(value);
             int valueDestinationPosition = valueDestinationNode.indexOf(value);
@@ -124,7 +124,7 @@ public class BTree {
             BNode toSplit = children.get(index);
             int midPoint = toSplit.keys.size() / 2;
             int mid = toSplit.keys.get(midPoint);
-            System.out.println("6>" + mid);
+            //System.out.println("6>" + mid);
             BNode left = new BNode(b), right = new BNode(b);
             left.keys.addAll(toSplit.keys.subList(0, midPoint));
             left.parent = this;
@@ -146,37 +146,47 @@ public class BTree {
         public void rotate(int leftIndex, boolean direction) {
             BNode right = children.get(leftIndex + 1);
             BNode left = children.get(leftIndex);
+            System.out.println("1>>L,R" + left + " " + right);
             int key = keys.get(leftIndex);
             if(direction) { //right rotate
                 keys.set(leftIndex, left.keys.get(left.keys.size() - 1));
                 left.keys.remove(left.keys.size() - 1);
                 right.keys.add(0, key);
-                right.children.add(0, left.children.get(left.children.size() -1));
-                right.children.get(0).parent = this;
-                left.children.remove(left.children.size() -1);
+                if(right.children.size() > 0) {
+                    if(left.children.size() > 0) right.children.add(0, left.children.get(left.children.size() - 1));
+                    right.children.get(0).parent = this;
+                }
+                if(left.children.size() > 0) left.children.remove(left.children.size() -1);
             } else { //rotate left
                 keys.set(leftIndex, right.keys.get(0));
                 right.keys.remove(0);
                 left.keys.add(key);
-                left.children.add(right.children.get(0));
-                left.children.get(left.children.size() - 1).parent = this;
-                right.children.remove(0);
+                if(left.children.size() > 0) {
+                    if(right.children.size() > 0) left.children.add(right.children.get(0));
+                    left.children.get(left.children.size() - 1).parent = this;
+                }
+                if(right.children.size() > 0) right.children.remove(0);
             }
         }
 
         public BNode condense() {
             BNode n = this;
+            System.out.println("1>" + n);
             while(n.parent != null) {
                 if(n.keys.size() < min) {
+                    System.out.println("2>" + n);
                     int index = n.parent.children.indexOf(n);
-                    if(index > 0 && n.parent.children.get(index - 1).keys.size() > min) //can rotate right.
-                        n.parent.rotate(index-1, true);
-                    else if(index < n.parent.children.size() &&
-                            n.parent.children.get(index + 1).keys.size() > min) //can rotate left.
+                    if(index > 0 && n.parent.children.get(index - 1).keys.size() > min) { //can rotate right.
+                        System.out.println("3>R " + n.parent);
+                        n.parent.rotate(index - 1, true);
+                    } else if(index < n.parent.children.size() &&
+                            n.parent.children.get(index + 1).keys.size() > min) { //can rotate left.
+                        System.out.println("3>L " + n.parent);
                         n.parent.rotate(index, false);
-                    else
+                    } else
                         ;//merge is needed.
                 }
+                n = n.parent;
             }
             //parent is null, may need some stuff here too.
             return n.parent != null ? n.parent : n;
@@ -184,23 +194,23 @@ public class BTree {
 
         public BNode split() {
             BNode n = this;
-            System.out.println("1>" + n);
+            //System.out.println("1>" + n);
             while(n.parent != null) {
                 if(n.keys.size() > b) {
-                    System.out.println("1.5>" + n + " " + n.keys.size() + " " + b);
+                    //System.out.println("1.5>" + n + " " + n.keys.size() + " " + b);
                     int splitIndex = n.parent.children.indexOf(n);
                     n.parent.split(splitIndex);
                 }
-                System.out.println("2>" + n);
+                //System.out.println("2>" + n);
                 n = n.parent;
             }
-            System.out.println("3>" + n);
+            //System.out.println("3>" + n);
             if(n.keys.size() > b) {
                 n.parent = new BNode(b);
                 n.parent.children.add(n);
                 n.parent.split(0);
             }
-            System.out.println("4>" + n.parent);
+            //System.out.println("4>" + n.parent);
             //System.out.println(n.parent);
             if(n.parent != null) return n.parent;
             return n;
