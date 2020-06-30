@@ -6,52 +6,17 @@ import java.util.*;
 //(1) make BNode type parameterized.
 //(2) make BTree extends AbstractSet.
 //(3) make a Map class.
-public class BTree<E extends Comparable<E>> extends AbstractSet<E>{
+public class BTreeSet<E extends Comparable<E>> extends AbstractSet<E>{
 
     private BNode<E> root = null;
     private int size = 0;
     private boolean debug = false;
 
-    public static void main(String[] args) {
-        BTree<Integer> t = new BTree(3, true);
-        for(int i = 5; i < 20; i++) {
-            t.add(i);
-            System.out.println("\\infty>" + t);
-        }
-        t.add(4);
-        t.remove(18);
-        System.out.println("\\infty>" + t);
-        t.remove(7);
-        System.out.println("\\infty>" + t);
-        t.remove(5);
-        System.out.println("\\infty>" + t);
-        t.remove(4);
-        System.out.println("\\infty>" + t);
-        t.remove(6);
-        System.out.println("\\infty>" + t);
-        t.remove(8);
-        System.out.println("\\infty>" + t);
-        t.remove(11);
-        System.out.println("\\infty>" + t);
-        t.remove(10);
-        System.out.println("\\infty>" + t);
-        Iterator<Integer> i = t.iterator();
-        while(i.hasNext()) {
-            int x = i.next();
-            if(x == 15) i.remove();
-            System.out.print(i.next() + " ");
-        }
-        System.out.println();
-        System.out.println("\\infty>" + t);
-        t.removeIf(x -> x % 2 == 0);
-        System.out.println(t);
-    }
-
-    public BTree() {
+    public BTreeSet() {
         this(100, false);
     }
 
-    public BTree(int b, boolean debug) {
+    public BTreeSet(int b, boolean debug) {
         root = new BNode(b);
         this.debug = debug;
     }
@@ -102,7 +67,7 @@ public class BTree<E extends Comparable<E>> extends AbstractSet<E>{
             @Override
             public void remove() {
                 //System.out.println("1>" + current.data);
-                BTree.this.remove(current.data);
+                BTreeSet.this.remove(current.data);
                 //System.out.println("2>" + BTree.this);
             }
         };
@@ -135,6 +100,16 @@ public class BTree<E extends Comparable<E>> extends AbstractSet<E>{
         }
         root.verify();
         return true;
+    }
+
+    public E lookup(E key) {
+        BNode<E> n = search(key);
+        for(int i = 0; i < n.keys.size(); i++) {
+            if(n.keys.get(i).data.compareTo(key) == 0) {
+                return n.keys.get(i).data;
+            }
+        }
+        return null;
     }
 
     private BNode<E> search(E value) {
@@ -208,6 +183,7 @@ public class BTree<E extends Comparable<E>> extends AbstractSet<E>{
             while(! n.children.isEmpty()) {
                 n = n.children.get(0);
             }
+            if(n.keys.isEmpty()) return null;
             return n.keys.get(0);
         }
 
