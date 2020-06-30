@@ -1,31 +1,40 @@
+import java.util.AbstractMap;
+import java.util.AbstractSet;
 import java.util.ArrayList;
+import java.util.Iterator;
+
 //Normally I would document this kind of thing, but
 //it was just an exploratory project to get a better practical understanding of b-trees.
-public class BTree {
+//Plan:
+//(1) make BNode type parameterized.
+//(2) make BTree extends AbstractSet.
+//(3) make a Map class.
+public class BTree<E extends Comparable<E>> {
 
     private BNode root = null;
+    private int size = 0;
     public static void main(String[] args) {
-        BTree t = new BTree(3);
+        BTree<Integer> t = new BTree(3);
         for(int i = 5; i < 20; i++) {
-            t.insert(i);
+            t.add(i);
             System.out.println("\\infty>" + t);
         }
-        t.insert(4);
-        t.delete(18);
+        t.add(4);
+        t.remove(18);
         System.out.println("\\infty>" + t);
-        t.delete(7);
+        t.remove(7);
         System.out.println("\\infty>" + t);
-        t.delete(5);
+        t.remove(5);
         System.out.println("\\infty>" + t);
-        t.delete(4);
+        t.remove(4);
         System.out.println("\\infty>" + t);
-        t.delete(6);
+        t.remove(6);
         System.out.println("\\infty>" + t);
-        t.delete(8);
+        t.remove(8);
         System.out.println("\\infty>" + t);
-        t.delete(11);
+        t.remove(11);
         System.out.println("\\infty>" + t);
-        t.delete(10);
+        t.remove(10);
         System.out.println("\\infty>" + t);
     }
 
@@ -37,39 +46,46 @@ public class BTree {
         return "" + root;
     }
 
-    public void insert(int value) {
+    //@Override
+    public void add(E value) {
         BNode n = search(value);
         int x = n.indexOf(value);
         if(x >= 0) return; //value already inserted.
         n.insert(value);
         root = n.split();
+        size++;
     }
 
-    public void delete(int value) {
-        BNode n = search(value);
+    public int size() {
+        return size;
+    }
+
+    public void remove(E value) {
+        BNode<E> n = search(value);
         int x = n.indexOf(value);
         if(x < 0) return; //value already deleted.
+        size--; //now definitely going to delete.
         if(n.children.isEmpty()) {
             n.delete(value);
             n.rebalance();
             root = n.condense();
         } else {
-            int scapegoat = n.children.get(x).highKey();
+            E scapegoat = n.children.get(x).highKey();
             //System.out.println(scapegoat);
-            delete(scapegoat);  //technically recursion, but limited to one call.
-            BNode valueDestinationNode = search(value);
+            remove(scapegoat);  //technically recursion, but limited to one call.
+            BNode<E> valueDestinationNode = search(value);
             int valueDestinationPosition = valueDestinationNode.indexOf(value);
             valueDestinationNode.keys.set(valueDestinationPosition, scapegoat);
         }
     }
 
-    private BNode search(int value) {
-        BNode n = root;
+    private BNode<E> search(E value) {
+        BNode<E> n = root;
         while(!n.children.isEmpty()) {
             BNode oldValue = n;
             for(int i = 0; i < n.keys.size(); i++) {
-                if(n.keys.get(i) == value) return n;
-                if(n.keys.get(i) > value) {
+                if(n.keys.get(i).compareTo(value) == 0) return n;
+                if(n.keys.get(i).compareTo(value) > 0) {
                     n = n.children.get(i);
                     break;
                 }
@@ -79,71 +95,73 @@ public class BTree {
         return n;
     }
 
-    private static class BNode {
-        private ArrayList<Integer> keys;
-        private ArrayList<BNode> children;
-        private BNode parent;
+    private static class BNode<E extends Comparable<E>> {
+        private ArrayList<E> keys;
+        private ArrayList<BNode<E>> children;
+        private BNode<E> parent;
         private int b;
         private int min;
 
         public BNode(int b) {
             this.b = b;
             min = (int)(Math.ceil((b+1)/2.0)-1);
-            keys = new ArrayList<Integer>();
-            children = new ArrayList<BNode>();
+            keys = new ArrayList<E>();
+            children = new ArrayList<BNode<E>>();
             parent = null;
         }
 
-        public void insert(int key) {
+        public void insert(E key) {
             if(keys.size() == b + 1) throw new IllegalStateException("Number of keys exceeds b (= " + b + ")");
             if(children.size() > 0) throw new IllegalStateException("Insertion into non-leaf node");
             int i = 0;
             for(; i < keys.size(); i++) {
-                if(keys.get(i) < key) {
+                if(keys.get(i).compareTo(key) < 0){//keys.get(i) < key) {
                     continue;
                 } else break;
             }
             keys.add(i, key);
         }
 
-        public void delete(int key) {
+        public void delete(E key) {
             if(keys.size() < min) throw new IllegalStateException("Number of keys is less than min (= " + min + ")");
             if(children.size() > 0) throw new IllegalStateException("Insertion into non-leaf node");
             for(int i = 0; i < keys.size(); i++) {
-                if(keys.get(i) == key) keys.remove(i);
+                if(keys.get(i).compareTo(key) == 0) {//keys.get(i) == key)
+                    keys.remove(i);
+                }
             }
         }
 
-        public int highKey() {
-            BNode n = this;
+        public E highKey() {
+            BNode<E> n = this;
             while(! n.children.isEmpty()) {
                 n = n.children.get(n.children.size() - 1);
             }
             return n.keys.get(n.keys.size() - 1);
         }
 
-        public int indexOf(int value) {
+        public int indexOf(E value) {
             for(int i = 0; i < keys.size(); i++) {
-                if(keys.get(i) == value) return i;
+                if(keys.get(i).compareTo(value) == 0) return i;
             }
             return -1;
         }
 
         public void split(int index) {
-            BNode toSplit = children.get(index);
+            BNode<E> toSplit = children.get(index);
             int midPoint = toSplit.keys.size() / 2;
-            int mid = toSplit.keys.get(midPoint);
+            E mid = toSplit.keys.get(midPoint);
             //System.out.println("6>" + mid);
-            BNode left = new BNode(b), right = new BNode(b);
+            BNode<E> left = new BNode(b), right = new BNode(b);
             left.keys.addAll(toSplit.keys.subList(0, midPoint));
             left.parent = this;
             right.keys.addAll(toSplit.keys.subList(midPoint + 1, toSplit.keys.size()));
             right.parent = this;
             if (!toSplit.children.isEmpty()) {
                 left.children.addAll(toSplit.children.subList(0, midPoint + 1));
-                for (BNode b : left.children) b.parent = left;
+                for (BNode<E> b : left.children) b.parent = left;
                 right.children.addAll(toSplit.children.subList(midPoint + 1, toSplit.children.size()));
-                for (BNode b : right.children) b.parent = right;
+                for (BNode<E> b : right.children) b.parent = right;
             }
             keys.add(index, mid);
             children.remove(index);
@@ -153,10 +171,10 @@ public class BTree {
 
         //right = true, left = false.
         public void rotate(int leftIndex, boolean direction) {
-            BNode right = children.get(leftIndex + 1);
-            BNode left = children.get(leftIndex);
+            BNode<E> right = children.get(leftIndex + 1);
+            BNode<E> left = children.get(leftIndex);
             //System.out.println("1>>L,R" + left + " " + right);
-            int key = keys.get(leftIndex);
+            E key = keys.get(leftIndex);
             if(direction) { //right rotate
                 keys.set(leftIndex, left.keys.get(left.keys.size() - 1));
                 left.keys.remove(left.keys.size() - 1);
@@ -180,7 +198,7 @@ public class BTree {
 
         public void merge(int leftIndex) {
             //System.out.println("1>>" + this);
-            BNode replacement = children.get(leftIndex);
+            BNode<E> replacement = children.get(leftIndex);
             replacement.keys.add(keys.get(leftIndex));
             replacement.keys.addAll(children.get(leftIndex+1).keys);
             replacement.children.addAll(children.get(leftIndex+1).children);
@@ -188,8 +206,8 @@ public class BTree {
             keys.remove(leftIndex);
         }
 
-        public BNode condense() {
-            BNode n = this;
+        public BNode<E> condense() {
+            BNode<E> n = this;
             //System.out.println("1>" + n);
             while(n.parent != null) {
                 if(n.keys.size() < min) {
@@ -215,8 +233,8 @@ public class BTree {
             return n;
         }
 
-        public BNode split() {
-            BNode n = this;
+        public BNode<E> split() {
+            BNode<E> n = this;
             //System.out.println("1>" + n);
             while(n.parent != null) {
                 if(n.keys.size() > b) {
