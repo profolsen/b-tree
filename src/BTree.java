@@ -1,5 +1,6 @@
 import java.util.ArrayList;
-
+//Normally I would document this kind of thing, but
+//it was just an exploratory project to get a better practical understanding of b-trees.
 public class BTree {
 
     private BNode root = null;
