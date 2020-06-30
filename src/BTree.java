@@ -1,6 +1,4 @@
-import java.util.AbstractSet;
-import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.*;
 
 //Normally I would document this kind of thing, but
 //it was just an exploratory project to get a better practical understanding of b-trees.
@@ -35,6 +33,10 @@ public class BTree<E extends Comparable<E>> extends AbstractSet<E>{
         System.out.println("\\infty>" + t);
         t.remove(10);
         System.out.println("\\infty>" + t);
+        Iterator<Integer> i = t.iterator();
+        while(i.hasNext()) {
+            System.out.print(i.next() + " ");
+        }
     }
 
     public BTree(int b) {
@@ -58,7 +60,107 @@ public class BTree<E extends Comparable<E>> extends AbstractSet<E>{
 
     @Override
     public Iterator<E> iterator() {
-        return null;
+        return new Iterator<E>() {
+            private Stack<BNode<E>> stack;
+            private Stack<Integer> index;
+            private E current = null;
+            private boolean initialized = false;
+
+            private void initialize() {
+                stack = new Stack<BNode<E>>(); //clear the stack.
+                index = new Stack<Integer>();
+                if(current == null) {
+                    BNode<E> n = root;
+                    while(n != null) {
+                        index.push(-1);
+                        stack.push(n);
+                        n = n.children.size() > 0 ? n.children.get(0) : null;
+                    }
+                    current = stack.peek().keys.get(0);
+                } else {
+                    BNode<E> found = search(current);
+                    Stack<BNode<E>> ustack = new Stack<BNode<E>>();
+                    Stack<Integer> uindex = new Stack<Integer>();
+                    ustack.push(found);
+                    uindex.push(found.indexOf(current));
+                    found = found.parent;
+                    while(found != null) {
+                        ustack.push(found);
+                        uindex.push(found.indexOf(ustack.peek()));
+                        found = found.parent;
+                    }
+                    while(! ustack.isEmpty()) {
+                        stack.push(ustack.pop());
+                        index.push(uindex.pop());
+                    }
+                }
+                initialized = true;
+                System.out.println("\\infty(i)> " + current);
+            }
+
+            private void advanceCursor() {
+                if(index.isEmpty()) return; //nothing left.
+                if(index.peek() > stack.peek().keys.size())
+                {
+                    System.out.println("1(a)>U");
+                    while(index.peek() > stack.peek().keys.size()) {
+                        index.pop();
+                        stack.pop();
+                    }
+                    //need to look at key in internal node.
+                    int i = index.pop();
+                    index.push(i++);
+                    current = stack.peek().keys.get(i);
+                } else if(stack.peek().children.size() > 0) {  //last thing looked at was internal value.
+                    System.out.println("1(a)>D");
+                    BNode<E> n = stack.peek();
+                    while(n != null) {
+                        index.push(-1);
+                        stack.push(n);
+                        n = n.children.get(0);
+                    }
+                    index.pop();
+                    index.push(0);
+                    current = stack.peek().keys.get(0);
+                } else {
+                    System.out.println("1(a)>R");
+                    int i = index.pop();
+                    System.out.println("1(a)>R " + i);
+                    index.push(++i);
+                    System.out.println("1(a)>R " + i);
+                    current = stack.peek().keys.get(i);
+                }
+            }
+
+            @Override
+            public boolean hasNext() {
+                System.out.println("1(h)> " + current);
+                if(!initialized) {
+                    initialize();
+                } else if(current == null) {
+                    advanceCursor();
+                }
+                System.out.println("\\infty(h)> " + current);
+                return current != null;
+            }
+
+            @Override
+            public E next() {
+                System.out.println("1(n)> " + current);
+                if(hasNext()) {
+                    System.out.println("2(n)> " + current);
+                    E answer = current;
+                    current = null; //set up hasNext().
+                    return answer;
+                }
+                throw new NoSuchElementException();
+            }
+
+            @Override
+            public void remove() {
+
+            }
+        };
     }
 
     public int size() {
@@ -154,6 +256,10 @@ public class BTree<E extends Comparable<E>> extends AbstractSet<E>{
                 if(keys.get(i).compareTo(value) == 0) return i;
             }
             return -1;
+        }
+
+        public int indexOf(BNode<E> child) {
+            return children.indexOf(child);
         }
 
         public void split(int index) {
