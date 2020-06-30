@@ -1,4 +1,3 @@
-import java.util.AbstractMap;
 import java.util.AbstractSet;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -9,7 +8,7 @@ import java.util.Iterator;
 //(1) make BNode type parameterized.
 //(2) make BTree extends AbstractSet.
 //(3) make a Map class.
-public class BTree<E extends Comparable<E>> {
+public class BTree<E extends Comparable<E>> extends AbstractSet<E>{
 
     private BNode root = null;
     private int size = 0;
@@ -47,23 +46,32 @@ public class BTree<E extends Comparable<E>> {
     }
 
     //@Override
-    public void add(E value) {
+    public boolean add(E value) {
         BNode n = search(value);
         int x = n.indexOf(value);
-        if(x >= 0) return; //value already inserted.
+        if(x >= 0) return false;
         n.insert(value);
         root = n.split();
         size++;
+        return true;
+    }
+
+    @Override
+    public Iterator<E> iterator() {
+        return null;
     }
 
     public int size() {
         return size;
     }
 
-    public void remove(E value) {
+    @Override
+    public boolean remove(Object key) throws ClassCastException{
+        @SuppressWarnings("unchecked")
+        E value = (E) key;
         BNode<E> n = search(value);
         int x = n.indexOf(value);
-        if(x < 0) return; //value already deleted.
+        if(x < 0) return false; //value already deleted.
         size--; //now definitely going to delete.
         if(n.children.isEmpty()) {
             n.delete(value);
@@ -77,6 +85,7 @@ public class BTree<E extends Comparable<E>> {
             int valueDestinationPosition = valueDestinationNode.indexOf(value);
             valueDestinationNode.keys.set(valueDestinationPosition, scapegoat);
         }
+        return true;
     }
 
     private BNode<E> search(E value) {
