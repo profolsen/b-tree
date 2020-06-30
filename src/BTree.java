@@ -184,8 +184,9 @@ public class BTree<E extends Comparable<E>> extends AbstractSet<E>{
         }
 
         public void delete(E key) {
-            if(keys.size() < min) throw new IllegalStateException("Number of keys is less than min (= " + min + ")");
-            if(children.size() > 0) throw new IllegalStateException("Insertion into non-leaf node");
+            if(keys.size() < min && parent != null)
+                throw new IllegalStateException("Number of keys is less than min (= " + min + ")");
+            if(children.size() > 0) throw new IllegalStateException("Deletion from non-leaf node");
             for(int i = 0; i < keys.size(); i++) {
                 if(keys.get(i).data.compareTo(key) == 0) {//keys.get(i) == key)
                     keys.get(i).delete();
