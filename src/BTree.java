@@ -18,6 +18,14 @@ public class BTree {
         System.out.println("\\infty>" + t);
         t.delete(4);
         System.out.println("\\infty>" + t);
+        t.delete(6);
+        System.out.println("\\infty>" + t);
+        t.delete(8);
+        System.out.println("\\infty>" + t);
+        t.delete(11);
+        System.out.println("\\infty>" + t);
+        t.delete(10);
+        System.out.println("\\infty>" + t);
     }
 
     public BTree(int b) {
@@ -146,7 +154,7 @@ public class BTree {
         public void rotate(int leftIndex, boolean direction) {
             BNode right = children.get(leftIndex + 1);
             BNode left = children.get(leftIndex);
-            System.out.println("1>>L,R" + left + " " + right);
+            //System.out.println("1>>L,R" + left + " " + right);
             int key = keys.get(leftIndex);
             if(direction) { //right rotate
                 keys.set(leftIndex, left.keys.get(left.keys.size() - 1));
@@ -169,27 +177,41 @@ public class BTree {
             }
         }
 
+        public void merge(int leftIndex) {
+            //System.out.println("1>>" + this);
+            BNode replacement = children.get(leftIndex);
+            replacement.keys.add(keys.get(leftIndex));
+            replacement.keys.addAll(children.get(leftIndex+1).keys);
+            replacement.children.addAll(children.get(leftIndex+1).children);
+            children.remove(leftIndex+1); //merged into left node.
+            keys.remove(leftIndex);
+        }
+
         public BNode condense() {
             BNode n = this;
-            System.out.println("1>" + n);
+            //System.out.println("1>" + n);
             while(n.parent != null) {
                 if(n.keys.size() < min) {
-                    System.out.println("2>" + n);
+                    //System.out.println("2>" + n);
                     int index = n.parent.children.indexOf(n);
                     if(index > 0 && n.parent.children.get(index - 1).keys.size() > min) { //can rotate right.
-                        System.out.println("3>R " + n.parent);
+                        //System.out.println("3>R " + n.parent);
                         n.parent.rotate(index - 1, true);
                     } else if(index < n.parent.children.size() &&
                             n.parent.children.get(index + 1).keys.size() > min) { //can rotate left.
-                        System.out.println("3>L " + n.parent);
+                        //System.out.println("3>L " + n.parent);
                         n.parent.rotate(index, false);
-                    } else
-                        ;//merge is needed.
+                    } else {
+                        //System.out.println("3>" + n.parent);
+                        if(index > 0) index--;
+                        n.parent.merge(index);
+                    }
                 }
                 n = n.parent;
             }
             //parent is null, may need some stuff here too.
-            return n.parent != null ? n.parent : n;
+            if(n.children.size() == 1) return n.children.get(0);
+            return n;
         }
 
         public BNode split() {
