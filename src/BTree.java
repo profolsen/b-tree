@@ -10,8 +10,10 @@ public class BTree<E extends Comparable<E>> extends AbstractSet<E>{
 
     private BNode<E> root = null;
     private int size = 0;
+    private boolean debug = false;
+
     public static void main(String[] args) {
-        BTree<Integer> t = new BTree(3);
+        BTree<Integer> t = new BTree(3, true);
         for(int i = 5; i < 20; i++) {
             t.add(i);
             System.out.println("\\infty>" + t);
@@ -42,14 +44,21 @@ public class BTree<E extends Comparable<E>> extends AbstractSet<E>{
         System.out.println();
         System.out.println("\\infty>" + t);
         t.removeIf(x -> x % 2 == 0);
+        System.out.println(t);
     }
 
-    public BTree(int b) {
+    public BTree() {
+        this(100, false);
+    }
+
+    public BTree(int b, boolean debug) {
         root = new BNode(b);
+        this.debug = debug;
     }
 
     public String toString() {
-        return "" + root + (root.keys.isEmpty() ? "()" : root.lowKey().string());
+        if(debug) return "" + root + (root.keys.isEmpty() ? "()" : root.lowKey().string());
+        else return super.toString();
     }
 
     //@Override
@@ -92,9 +101,9 @@ public class BTree<E extends Comparable<E>> extends AbstractSet<E>{
 
             @Override
             public void remove() {
-                System.out.println("1>" + current.data);
+                //System.out.println("1>" + current.data);
                 BTree.this.remove(current.data);
-                System.out.println("2>" + BTree.this);
+                //System.out.println("2>" + BTree.this);
             }
         };
     }
@@ -236,7 +245,7 @@ public class BTree<E extends Comparable<E>> extends AbstractSet<E>{
 
         //right = true, left = false.
         public void rotate(int leftIndex, boolean direction) {
-            System.out.println("1(r)>" + this);
+            //System.out.println("1(r)>" + this);
             BNode<E> right = children.get(leftIndex + 1);
             BNode<E> left = children.get(leftIndex);
             //System.out.println("1>>L,R" + left + " " + right);
@@ -251,9 +260,9 @@ public class BTree<E extends Comparable<E>> extends AbstractSet<E>{
                 }
                 if(left.children.size() > 0) left.children.remove(left.children.size() -1);
             } else { //rotate left
-                System.out.println("2(r)>L" + keys + " " + this);
+                //System.out.println("2(r)>L" + keys + " " + this);
                 keys.set(leftIndex, right.keys.get(0));
-                System.out.println("2(r)>L" + keys + " " + this);
+                //System.out.println("2(r)>L" + keys + " " + this);
                 right.keys.remove(0);
                 left.keys.add(key);
                 if(left.children.size() > 0) {
@@ -279,25 +288,25 @@ public class BTree<E extends Comparable<E>> extends AbstractSet<E>{
 
         public BNode<E> rebalance() {
             BNode<E> n = this;
-            System.out.println("1>" + n);
+            //System.out.println("1>" + n);
             while(n.parent != null) {
                 if(n.keys.size() < min) {
-                    System.out.println("2>(" + n.keys.size() + ", " + min + ")" + n);
+                    //System.out.println("2>(" + n.keys.size() + ", " + min + ")" + n);
                     int index = n.parent.children.indexOf(n);
                     if(index > 0 && n.parent.children.get(index - 1).keys.size() > min) { //can rotate right.
-                        System.out.println("3>R " + n.parent);
+                        //System.out.println("3>R " + n.parent);
                         n.parent.rotate(index - 1, true);
                     } else if(index < n.parent.children.size() &&
                             n.parent.children.get(index + 1).keys.size() > min) { //can rotate left.
-                        System.out.println("3>L " + n.parent);
+                        //System.out.println("3>L " + n.parent);
                         n.parent.rotate(index, false);
                     } else {
-                        System.out.println("3>" + n.parent);
+                        //System.out.println("3>" + n.parent);
                         if(index > 0) index--;
                         n.parent.merge(index);
                     }
                 }
-                System.out.println("4>" + n + " to " + n.parent);
+                //System.out.println("4>" + n + " to " + n.parent);
                 n = n.parent;
             }
             //parent is null, may need some stuff here too.
